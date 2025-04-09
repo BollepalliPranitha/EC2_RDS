@@ -55,7 +55,7 @@ jobs:
       run: |
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
           cd /home/ec2-user/booking_system
-          python3 setup_db.py  # Run the setup script to create DB, tables and insert data
+          python3 db_setup.py  # Run the setup script to create DB, tables and insert data
           python3 booking_trigger.py  # Run the booking trigger script to insert bookings and calculate costs
         EOF
 

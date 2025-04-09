@@ -1,0 +1,138 @@
+{
+  "Hotels": [
+    {
+      "HotelName": "Sunset Resort",
+      "Location": "Miami Beach, FL",
+      "TotalRooms": 50
+    },
+    {
+      "HotelName": "Mountain View Hotel",
+      "Location": "Aspen, CO",
+      "TotalRooms": 30
+    },
+    {
+      "HotelName": "Ocean Breeze Hotel",
+      "Location": "San Diego, CA",
+      "TotalRooms": 40
+    }
+  ],
+  "Rooms": [
+    {
+      "HotelID": 1,
+      "RoomNumber": 101,
+      "RoomType": "Single",
+      "PricePerNight": 120.00
+    },
+    {
+      "HotelID": 1,
+      "RoomNumber": 102,
+      "RoomType": "Double",
+      "PricePerNight": 200.00
+    },
+    {
+      "HotelID": 1,
+      "RoomNumber": 103,
+      "RoomType": "Suite",
+      "PricePerNight": 300.00
+    },
+    {
+      "HotelID": 1,
+      "RoomNumber": 104,
+      "RoomType": "Single",
+      "PricePerNight": 110.00
+    },
+    {
+      "HotelID": 2,
+      "RoomNumber": 201,
+      "RoomType": "Double",
+      "PricePerNight": 150.00
+    },
+    {
+      "HotelID": 2,
+      "RoomNumber": 202,
+      "RoomType": "Single",
+      "PricePerNight": 100.00
+    },
+    {
+      "HotelID": 2,
+      "RoomNumber": 203,
+      "RoomType": "Suite",
+      "PricePerNight": 250.00
+    },
+    {
+      "HotelID": 3,
+      "RoomNumber": 301,
+      "RoomType": "Double",
+      "PricePerNight": 180.00
+    }
+  ],
+  "Guests": [
+    {
+      "FirstName": "John",
+      "LastName": "Doe",
+      "Email": "john.doe@example.com",
+      "Phone": "555-1234"
+    },
+    {
+      "FirstName": "Jane",
+      "LastName": "Smith",
+      "Email": "jane.smith@example.com",
+      "Phone": "555-5678"
+    },
+    {
+      "FirstName": "Alice",
+      "LastName": "Johnson",
+      "Email": "alice.johnson@example.com",
+      "Phone": "555-8765"
+    },
+    {
+      "FirstName": "Bob",
+      "LastName": "Williams",
+      "Email": "bob.williams@example.com",
+      "Phone": "555-4321"
+    },
+    {
+      "FirstName": "Eve",
+      "LastName": "Davis",
+      "Email": "eve.davis@example.com",
+      "Phone": "555-9876"
+    }
+  ],
+  "Bookings": [
+    {
+      "GuestID": 1,
+      "RoomID": 1,
+      "CheckInDate": "2025-03-01",
+      "CheckOutDate": "2025-03-05",
+      "TotalCost": 480.00
+    },
+    {
+      "GuestID": 2,
+      "RoomID": 6,
+      "CheckInDate": "2025-04-01",
+      "CheckOutDate": "2025-04-05",
+      "TotalCost": 400.00
+    },
+    {
+      "GuestID": 3,
+      "RoomID": 8,
+      "CheckInDate": "2025-05-01",
+      "CheckOutDate": "2025-05-03",
+      "TotalCost": 360.00
+    },
+    {
+      "GuestID": 4,
+      "RoomID": 3,
+      "CheckInDate": "2025-02-10",
+      "CheckOutDate": "2025-02-12",
+      "TotalCost": 600.00
+    },
+    {
+      "GuestID": 5,
+      "RoomID": 7,
+      "CheckInDate": "2025-06-10",
+      "CheckOutDate": "2025-06-15",
+      "TotalCost": 1250.00
+    }
+  ]
+}
