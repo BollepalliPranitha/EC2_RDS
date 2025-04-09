@@ -48,7 +48,8 @@ jobs:
 
             # Install the ODBC Driver 17 for SQL Server
             sudo yum install -y msodbcsql17 --assumeyes
-            sudo yum install -y unixODBC-devel
+            sudo rpm -ivh --noscripts msodbcsql17-17.10.6.1-1.x86_64.rpm
+            
 
             # Install Python pip and dependencies from requirements.txt
             pip3 install --upgrade pip
