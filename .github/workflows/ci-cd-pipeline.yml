@@ -48,6 +48,7 @@ jobs:
 
           # Try installing ODBC Driver 17 for SQL Server non-interactively with yum
           sudo yum install -y msodbcsql17 --assumeyes
+          sudo yum clean all
 
           # If yum fails, fall back to RPM with --noscripts
           if [ $? -ne 0 ]; then
