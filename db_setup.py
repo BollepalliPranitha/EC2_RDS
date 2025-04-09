@@ -94,29 +94,23 @@ def calculate_total_cost(cursor, room_id, check_in_date, check_out_date):
     return 0
 
 def insert_sample_data(cursor):
-    # --- Insert Hotels ---
+    # Insert Hotels
     hotels = [
         {"HotelName": "Sunset Resort", "Location": "Miami Beach, FL", "TotalRooms": 50},
         {"HotelName": "Mountain View Hotel", "Location": "Aspen, CO", "TotalRooms": 30},
         {"HotelName": "Ocean Breeze Hotel", "Location": "San Diego, CA", "TotalRooms": 40}
     ]
-
     hotel_name_to_id = {}
-
     for hotel in hotels:
         cursor.execute("""
             IF NOT EXISTS (SELECT * FROM Hotels WHERE HotelName = ?)
-            BEGIN
-                INSERT INTO Hotels (HotelName, Location, TotalRooms)
-                VALUES (?, ?, ?);
-            END
+            INSERT INTO Hotels (HotelName, Location, TotalRooms)
+            VALUES (?, ?, ?)
         """, (hotel["HotelName"], hotel["HotelName"], hotel["Location"], hotel["TotalRooms"]))
-
         cursor.execute("SELECT HotelID FROM Hotels WHERE HotelName = ?", (hotel["HotelName"],))
-        hotel_id = cursor.fetchone()[0]
-        hotel_name_to_id[hotel["HotelName"]] = hotel_id
+        hotel_name_to_id[hotel["HotelName"]] = cursor.fetchone()[0]
 
-    # --- Insert Guests ---
+    # Insert Guests
     guests = [
         {"FirstName": "John", "LastName": "Doe", "Email": "john.doe@example.com", "Phone": "555-1234"},
         {"FirstName": "Jane", "LastName": "Smith", "Email": "jane.smith@example.com", "Phone": "555-5678"},
@@ -124,23 +118,17 @@ def insert_sample_data(cursor):
         {"FirstName": "Bob", "LastName": "Williams", "Email": "bob.williams@example.com", "Phone": "555-4321"},
         {"FirstName": "Eve", "LastName": "Davis", "Email": "eve.davis@example.com", "Phone": "555-9876"}
     ]
-
     guest_email_to_id = {}
-
     for guest in guests:
         cursor.execute("""
             IF NOT EXISTS (SELECT * FROM Guests WHERE Email = ?)
-            BEGIN
-                INSERT INTO Guests (FirstName, LastName, Email, Phone)
-                VALUES (?, ?, ?, ?);
-            END
+            INSERT INTO Guests (FirstName, LastName, Email, Phone)
+            VALUES (?, ?, ?, ?)
         """, (guest["Email"], guest["FirstName"], guest["LastName"], guest["Email"], guest["Phone"]))
-
         cursor.execute("SELECT GuestID FROM Guests WHERE Email = ?", (guest["Email"],))
-        guest_id = cursor.fetchone()[0]
-        guest_email_to_id[guest["Email"]] = guest_id
+        guest_email_to_id[guest["Email"]] = cursor.fetchone()[0]
 
-    # --- Insert Rooms ---
+    # Insert Rooms
     rooms = [
         {"HotelName": "Sunset Resort", "RoomNumber": 101, "RoomType": "Single", "PricePerNight": 120.00},
         {"HotelName": "Sunset Resort", "RoomNumber": 102, "RoomType": "Double", "PricePerNight": 200.00},
@@ -151,47 +139,29 @@ def insert_sample_data(cursor):
         {"HotelName": "Mountain View Hotel", "RoomNumber": 203, "RoomType": "Suite", "PricePerNight": 250.00},
         {"HotelName": "Ocean Breeze Hotel", "RoomNumber": 301, "RoomType": "Double", "PricePerNight": 180.00}
     ]
-
     room_lookup = {}
-
     for room in rooms:
         hotel_id = hotel_name_to_id[room["HotelName"]]
-
         cursor.execute("""
             IF NOT EXISTS (SELECT * FROM Rooms WHERE RoomNumber = ? AND HotelID = ?)
-            BEGIN
-                INSERT INTO Rooms (HotelID, RoomNumber, RoomType, PricePerNight)
-                VALUES (?, ?, ?, ?);
-            END
+            INSERT INTO Rooms (HotelID, RoomNumber, RoomType, PricePerNight)
+            VALUES (?, ?, ?, ?)
         """, (room["RoomNumber"], hotel_id, hotel_id, room["RoomNumber"], room["RoomType"], room["PricePerNight"]))
-
         cursor.execute("SELECT RoomID FROM Rooms WHERE HotelID = ? AND RoomNumber = ?", (hotel_id, room["RoomNumber"]))
-        room_id = cursor.fetchone()[0]
-        room_lookup[(hotel_id, room["RoomNumber"])] = room_id
+        room_lookup[(hotel_id, room["RoomNumber"])] = cursor.fetchone()[0]
 
-    # --- Insert Bookings ---
+    # Insert Bookings
     bookings = [
-        {"GuestEmail": "john.doe@example.com", "HotelName": "Sunset Resort", "RoomNumber": 101,
-         "CheckInDate": "2025-03-01", "CheckOutDate": "2025-03-05", "TotalCost": 480.00},
-
-        {"GuestEmail": "jane.smith@example.com", "HotelName": "Mountain View Hotel", "RoomNumber": 202,
-         "CheckInDate": "2025-04-01", "CheckOutDate": "2025-04-05", "TotalCost": 400.00},
-
-        {"GuestEmail": "alice.johnson@example.com", "HotelName": "Ocean Breeze Hotel", "RoomNumber": 301,
-         "CheckInDate": "2025-05-01", "CheckOutDate": "2025-05-03", "TotalCost": 360.00},
-
-        {"GuestEmail": "bob.williams@example.com", "HotelName": "Sunset Resort", "RoomNumber": 103,
-         "CheckInDate": "2025-02-10", "CheckOutDate": "2025-02-12", "TotalCost": 600.00},
-
-        {"GuestEmail": "eve.davis@example.com", "HotelName": "Mountain View Hotel", "RoomNumber": 203,
-         "CheckInDate": "2025-06-10", "CheckOutDate": "2025-06-15", "TotalCost": 1250.00}
+        {"GuestEmail": "john.doe@example.com", "HotelName": "Sunset Resort", "RoomNumber": 101, "CheckInDate": "2025-03-01", "CheckOutDate": "2025-03-05", "TotalCost": 480.00},
+        {"GuestEmail": "jane.smith@example.com", "HotelName": "Mountain View Hotel", "RoomNumber": 202, "CheckInDate": "2025-04-01", "CheckOutDate": "2025-04-05", "TotalCost": 400.00},
+        {"GuestEmail": "alice.johnson@example.com", "HotelName": "Ocean Breeze Hotel", "RoomNumber": 301, "CheckInDate": "2025-05-01", "CheckOutDate": "2025-05-03", "TotalCost": 360.00},
+        {"GuestEmail": "bob.williams@example.com", "HotelName": "Sunset Resort", "RoomNumber": 103, "CheckInDate": "2025-02-10", "CheckOutDate": "2025-02-12", "TotalCost": 600.00},
+        {"GuestEmail": "eve.davis@example.com", "HotelName": "Mountain View Hotel", "RoomNumber": 203, "CheckInDate": "2025-06-10", "CheckOutDate": "2025-06-15", "TotalCost": 1250.00}
     ]
-
     for booking in bookings:
         guest_id = guest_email_to_id.get(booking["GuestEmail"])
         hotel_id = hotel_name_to_id.get(booking["HotelName"])
         room_id = room_lookup.get((hotel_id, booking["RoomNumber"]))
-
         if guest_id and room_id:
             cursor.execute("""
                 INSERT INTO Bookings (GuestID, RoomID, CheckInDate, CheckOutDate, TotalCost)
@@ -200,30 +170,28 @@ def insert_sample_data(cursor):
         else:
             print(f"Skipping booking: GuestID or RoomID not found for {booking}")
 
-
 def main():
     config = load_config()
     
-    with open("datasets/data.json", "r") as file:
-        data = json.load(file)
-    
-    #  STEP 1: Connect to master first and create DB
-    master_connection = connect_to_rds(config, database='master')
+    # Step 1: Connect to master with autocommit to create DB
+    master_connection = connect_to_rds(config, database='master', autocommit=True)
     master_cursor = master_connection.cursor()
     create_database(master_cursor, config['DB_NAME'])
-    master_connection.commit()
     master_connection.close()
 
-    #  STEP 2: Now connect to your actual target DB
+    # Step 2: Connect to the target DB
     connection = connect_to_rds(config, database=config['DB_NAME'])
     cursor = connection.cursor()
 
-    # STEP 3: Continue with table creation and data insertion
+    # Step 3: Create tables and insert data
     create_hotel_table(cursor)
     create_rooms_table(cursor)
     create_guests_table(cursor)
     create_bookings_table(cursor)
-    
-    insert_sample_data(cursor, data)
+    insert_sample_data(cursor)
+
     connection.commit()
     connection.close()
+
+if __name__ == "__main__":
+    main()
