@@ -148,31 +148,26 @@ def insert_sample_data(cursor, data):
 def main():
     config = load_config()
     
-    
     with open("datasets/data.json", "r") as file:
         data = json.load(file)
     
-    # Step 1: Connect to RDS database (ensure you are connecting to the right DB)
-    connection = connect_to_rds(config)
+    #  STEP 1: Connect to master first and create DB
+    master_connection = connect_to_rds(config, database='master')
+    master_cursor = master_connection.cursor()
+    create_database(master_cursor, config['DB_NAME'])
+    master_connection.commit()
+    master_connection.close()
+
+    #  STEP 2: Now connect to your actual target DB
+    connection = connect_to_rds(config, database=config['DB_NAME'])
     cursor = connection.cursor()
-    
-    # Step 2: Create the database if not exists
-    create_database(cursor, config['DB_NAME'])
-    
-    # Step 3: Create tables if they don't exist
+
+    # STEP 3: Continue with table creation and data insertion
     create_hotel_table(cursor)
     create_rooms_table(cursor)
     create_guests_table(cursor)
     create_bookings_table(cursor)
     
-    # Step 4: Insert sample data
     insert_sample_data(cursor, data)
-    
-    # Step 5: Commit the transaction
     connection.commit()
-
-    # Step 6: Close the connection
     connection.close()
-
-if __name__ == "__main__":
-    main()
