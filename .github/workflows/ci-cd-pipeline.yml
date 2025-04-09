@@ -106,11 +106,17 @@ jobs:
           cd /home/ec2-user/booking_system
           python3 run_queries.py  # Run the custom query script to fetch results
         EOF
+    - name: Download query_results.yaml from EC2
+      run: |
+        scp -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/booking_system/query_results.yaml query_results.yaml
 
     - name: Commit and push query results back to repository
       run: |
-        git add query_results.yaml  # Add the file containing the results of the query
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add query_results.yaml
         git commit -m "Automated update from EC2 query results"
-        git push origin main  # Push the changes to the main branch
+        git push origin main
+
 
  
