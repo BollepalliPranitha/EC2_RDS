@@ -18,7 +18,7 @@ def create_database(cursor, db_name):
     cursor.execute(f"USE {db_name};")
 def run_queries(cursor):
     # Example queries to run
-    cursor.execute("SELECT HotelName, SUM(TotalCost) FROM Bookings b JOIN Rooms r ON b.RoomID = r.RoomID GROUP BY HotelName;")
+    cursor.execute("SELECT HotelID, SUM(TotalCost) FROM Bookings b JOIN Rooms r ON b.RoomID = r.RoomID GROUP BY HotelID;")
     result = cursor.fetchall()
 
 # Save the result into a YAML file
