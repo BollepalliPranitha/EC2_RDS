@@ -1,16 +1,19 @@
 {
   "Hotels": [
     {
+     
       "HotelName": "Sunset Resort",
       "Location": "Miami Beach, FL",
       "TotalRooms": 50
     },
     {
+      
       "HotelName": "Mountain View Hotel",
       "Location": "Aspen, CO",
       "TotalRooms": 30
     },
     {
+      
       "HotelName": "Ocean Breeze Hotel",
       "Location": "San Diego, CA",
       "TotalRooms": 40

@@ -144,6 +144,7 @@ def insert_sample_data(cursor, data):
         else:
             print(f"Skipping booking due to missing guest or room. GuestID: {booking['GuestID']}, RoomID: {booking['RoomID']}")
 
+
 def main():
     config = load_config()
     
