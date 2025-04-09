@@ -83,13 +83,16 @@ jobs:
 
           # Register the driver with the correct path
           sudo bash -c "cat > /etc/odbcinst.ini << 'CONFIG'
-          [ODBC Driver 17 for SQL Server]
-          Description=Microsoft ODBC Driver 17 for SQL Server
-          Driver=$DRIVER_PATH
-          "
+        [ODBC Driver 17 for SQL Server]
+        Description=Microsoft ODBC Driver 17 for SQL Server
+        Driver=$DRIVER_PATH
+        "
 
           # Set permissions
           sudo chmod 644 /etc/odbcinst.ini
+
+          # Set ODBCINSTINI for this session
+          export ODBCINSTINI=/etc/odbcinst.ini
 
           # Install Python dependencies
           pip3 install --upgrade pip
@@ -102,6 +105,8 @@ jobs:
           cat /etc/odbcinst.ini || echo "/etc/odbcinst.ini not found!"
           echo "Driver file check:"
           ls -l "$DRIVER_PATH"
+          echo "ODBCINSTINI setting:"
+          echo $ODBCINSTINI
           echo "ODBC Driver setup completed successfully."
         EOF
   
