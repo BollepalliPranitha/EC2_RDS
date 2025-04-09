@@ -54,7 +54,6 @@ jobs:
             sudo curl -o /etc/yum.repos.d/msprod.repo https://packages.microsoft.com/config/amazonlinux/2/prod.repo
             sudo yum install -y msodbcsql17 || {
               echo "Yum install failed, trying manual RPM install..."
-              # Use a known working URL from Microsoft's packages site
               curl -o msodbcsql17.rpm https://packages.microsoft.com/rhel/8/prod/Packages/m/msodbcsql17-17.10.6.1-1.x86_64.rpm
               if [ $? -ne 0 ]; then
                 echo "Failed to download msodbcsql17 RPM!"
@@ -87,18 +86,20 @@ jobs:
           [ODBC Driver 17 for SQL Server]
           Description=Microsoft ODBC Driver 17 for SQL Server
           Driver=$DRIVER_PATH
-          CONFIG"
+          "
+
           # Set permissions
           sudo chmod 644 /etc/odbcinst.ini
+
           # Install Python dependencies
           pip3 install --upgrade pip
           pip3 install -r /home/ec2-user/booking_system/requirements.txt
 
           # Verify setup
           echo "Registered ODBC drivers:"
-          odbcinst -q -d
+          odbcinst -q -d || echo "odbcinst failed!"
           echo "Contents of /etc/odbcinst.ini:"
-          cat /etc/odbcinst.ini
+          cat /etc/odbcinst.ini || echo "/etc/odbcinst.ini not found!"
           echo "Driver file check:"
           ls -l "$DRIVER_PATH"
           echo "ODBC Driver setup completed successfully."
@@ -107,9 +108,23 @@ jobs:
     - name: Run database setup and booking trigger scripts on EC2
       run: |
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
+          # Set ODBCINSTINI to ensure unixODBC finds the config
+          export ODBCINSTINI=/etc/odbcinst.ini
+
+          # Debug the environment
+          echo "Registered ODBC drivers:"
+          odbcinst -q -d || echo "odbcinst failed!"
+          echo "Contents of /etc/odbcinst.ini:"
+          cat /etc/odbcinst.ini || echo "/etc/odbcinst.ini not found!"
+          echo "Driver library directory:"
+          ls -l /opt/microsoft/msodbcsql17/lib64/ || echo "Directory not found!"
+          echo "ODBCINSTINI setting:"
+          echo $ODBCINSTINI
+
+          # Run the scripts
           cd /home/ec2-user/booking_system
-          python3 db_setup.py  # Run the setup script to create DB, tables and insert data
-          python3 booking_trigger.py  # Run the booking trigger script to insert bookings and calculate costs
+          python3 db_setup.py
+          python3 booking_trigger.py
         EOF
 
     - name: Run custom SQL queries on EC2 and fetch results
