@@ -88,7 +88,8 @@ jobs:
           Description=Microsoft ODBC Driver 17 for SQL Server
           Driver=$DRIVER_PATH
           CONFIG"
-
+          # Set permissions
+          sudo chmod 644 /etc/odbcinst.ini
           # Install Python dependencies
           pip3 install --upgrade pip
           pip3 install -r /home/ec2-user/booking_system/requirements.txt
