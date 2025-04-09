@@ -93,42 +93,63 @@ def calculate_total_cost(cursor, room_id, check_in_date, check_out_date):
         return total_cost
     return 0
 
-def check_and_insert_booking(cursor, booking_data):
-    for booking in booking_data:
-        # Ensure that the GuestID exists before inserting a booking
+def insert_sample_data(cursor, data):
+    # Insert hotels data
+    for hotel in data["Hotels"]:
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM Hotels WHERE HotelName = ?)
+            BEGIN
+                INSERT INTO Hotels (HotelName, Location, TotalRooms)
+                VALUES (?, ?, ?);
+            END
+        """, (hotel["HotelName"], hotel["HotelName"], hotel["Location"], hotel["TotalRooms"]))
+
+    # Insert rooms data
+    for room in data["Rooms"]:
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM Rooms WHERE RoomNumber = ? AND HotelID = ?)
+            BEGIN
+                INSERT INTO Rooms (HotelID, RoomNumber, RoomType, PricePerNight)
+                VALUES (?, ?, ?, ?);
+            END
+        """, (room["HotelID"], room["RoomNumber"], room["RoomNumber"], room["RoomType"], room["PricePerNight"]))
+
+    # Insert guests data
+    for guest in data["Guests"]:
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM Guests WHERE Email = ?)
+            BEGIN
+                INSERT INTO Guests (FirstName, LastName, Email, Phone)
+                VALUES (?, ?, ?, ?);
+            END
+        """, (guest["Email"], guest["FirstName"], guest["LastName"], guest["Email"], guest["Phone"]))
+
+    # Insert bookings data
+    for booking in data["Bookings"]:
         cursor.execute("""
             SELECT GuestID FROM Guests WHERE GuestID = ?
         """, (booking['GuestID'],))
         guest_exists = cursor.fetchone()
-        
-        if not guest_exists:
-            print(f"Guest with ID {booking['GuestID']} does not exist. Please insert the guest first.")
-            continue  # Skip this booking if the guest doesn't exist
-        
+
         cursor.execute("""
-            SELECT * FROM Bookings 
-            WHERE RoomID = ? AND (CheckInDate BETWEEN ? AND ? OR CheckOutDate BETWEEN ? AND ?)
-        """, (booking['RoomID'], booking['CheckInDate'], booking['CheckOutDate'], booking['CheckInDate'], booking['CheckOutDate']))
-        
-        if cursor.fetchone() is None:  # If no overlapping booking
-            total_cost = calculate_total_cost(cursor, booking['RoomID'], booking['CheckInDate'], booking['CheckOutDate'])
+            SELECT RoomID FROM Rooms WHERE RoomID = ?
+        """, (booking['RoomID'],))
+        room_exists = cursor.fetchone()
+
+        if guest_exists and room_exists:
             cursor.execute("""
                 INSERT INTO Bookings (GuestID, RoomID, CheckInDate, CheckOutDate, TotalCost)
                 VALUES (?, ?, ?, ?, ?)
-            """, (booking['GuestID'], booking['RoomID'], booking['CheckInDate'], booking['CheckOutDate'], total_cost))
+            """, (booking['GuestID'], booking['RoomID'], booking['CheckInDate'], booking['CheckOutDate'], booking['TotalCost']))
+        else:
+            print(f"Skipping booking due to missing guest or room. GuestID: {booking['GuestID']}, RoomID: {booking['RoomID']}")
 
 def main():
     config = load_config()
     
-    # Sample booking data (you may load it from a JSON file)
-    booking_data = [
-        {
-            'GuestID': 1,
-            'RoomID': 101,
-            'CheckInDate': '2025-03-01',
-            'CheckOutDate': '2025-03-05',
-        }
-    ]
+    
+    with open("datasets/data.json", "r") as file:
+        data = json.load(file)
     
     # Step 1: Connect to RDS database (ensure you are connecting to the right DB)
     connection = connect_to_rds(config)
@@ -143,9 +164,9 @@ def main():
     create_guests_table(cursor)
     create_bookings_table(cursor)
     
-    # Step 4: Check and insert bookings
-    check_and_insert_booking(cursor, booking_data)
-
+    # Step 4: Insert sample data
+    insert_sample_data(cursor, data)
+    
     # Step 5: Commit the transaction
     connection.commit()
 
