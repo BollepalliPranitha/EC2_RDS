@@ -33,6 +33,16 @@ jobs:
         chmod 600 private_key.pem
         eval $(ssh-agent -s)
         ssh-add private_key.pem
+    - name: Install necessary tools on EC2
+      run: |
+        ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
+          # Install development tools and ODBC driver on EC2
+          sudo yum groupinstall "Development Tools" -y
+          sudo yum install -y python3-devel unixODBC-devel
+          sudo yum install -y msodbcsql17
+          # Install pip dependencies on EC2
+          pip3 install -r /home/ec2-user/booking_system/requirements.txt
+        EOF
 
     - name: Upload files to EC2
       run: |
@@ -42,14 +52,7 @@ jobs:
         EOF
         # Now upload the files to EC2
         scp -i private_key.pem -o StrictHostKeyChecking=no -r . ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/booking_system
-    - name: Install Python and dependencies on EC2
-      run: |
-        ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
-          sudo yum update -y  # Ensure EC2 is up to date
-          sudo yum install -y python3  # Install Python3
-          sudo yum install -y python3-pip  # Install pip for Python3
-          pip3 install -r /home/ec2-user/booking_system/requirements.txt  # Install dependencies on EC2
-        EOF
+  
     - name: Run database setup and booking trigger scripts on EC2
       run: |
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
