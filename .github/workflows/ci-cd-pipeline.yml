@@ -33,6 +33,13 @@ jobs:
         chmod 600 private_key.pem
         eval $(ssh-agent -s)
         ssh-add private_key.pem
+    - name: Upload files to EC2 using rsync
+      run: |
+        # Install rsync on EC2 if it's not already installed
+        ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} "sudo yum install -y rsync"
+        mkdir -p /home/ec2-user/booking_system
+        # Use rsync to upload files while excluding the .git directory
+        rsync -avz --exclude '.git' -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" ./ ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/booking_system
     - name: Install necessary tools on EC2
       run: |
         # SSH into EC2 and install tools
@@ -81,12 +88,7 @@ jobs:
         EOF
 
 
-    - name: Upload files to EC2 using rsync
-      run: |
-        # Install rsync on EC2 if it's not already installed
-        ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} "sudo yum install -y rsync"
-        # Use rsync to upload files while excluding the .git directory
-        rsync -avz --exclude '.git' -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" ./ ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/booking_system
+    
   
     - name: Run database setup and booking trigger scripts on EC2
       run: |
