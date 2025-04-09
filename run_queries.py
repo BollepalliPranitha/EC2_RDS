@@ -9,7 +9,8 @@ def load_config():
     return config
 
 def connect_to_rds(config):
-    connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={config["RDS_HOST"]},{config["DB_PORT"]};DATABASE={config["DB_NAME"]};UID={config["DB_USER"]};PWD={config["DB_PASSWORD"]}'
+    driver_path = "/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.10.so.6.1"
+    connection_string = f'DRIVER={driver_path};SERVER={config["RDS_HOST"]},{config["DB_PORT"]};DATABASE={config["DB_NAME"]};UID={config["DB_USER"]};PWD={config["DB_PASSWORD"]}'
     return pyodbc.connect(connection_string)
 
 def create_database(cursor, db_name):

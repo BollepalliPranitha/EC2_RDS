@@ -21,11 +21,7 @@ jobs:
       with:
         python-version: '3.8'  # Set the Python version to use
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        sudo apt install -y unixodbc-dev
-        pip install -r requirements.txt  # Install dependencies from your requirements.txt
+    
 
     - name: Set up SSH for EC2 connection
       run: |
@@ -72,7 +68,7 @@ jobs:
             echo "msodbcsql17 is already installed."
           fi
 
-          # Find the actual driver library
+          # Verify driver library
           DRIVER_PATH=$(find /opt/microsoft/msodbcsql17/lib64 -name 'libmsodbcsql-17.*.so.*' | head -n 1)
           if [ -z "$DRIVER_PATH" ]; then
             echo "Error: No ODBC Driver 17 library found!"
@@ -81,50 +77,22 @@ jobs:
           fi
           echo "Found ODBC Driver library at: $DRIVER_PATH"
 
-          # Register the driver with the correct path
-          sudo bash -c "cat > /etc/odbcinst.ini << 'CONFIG'
-        [ODBC Driver 17 for SQL Server]
-        Description=Microsoft ODBC Driver 17 for SQL Server
-        Driver=$DRIVER_PATH
-        "
-
-          # Set permissions
-          sudo chmod 644 /etc/odbcinst.ini
-
-          # Set ODBCINSTINI for this session
-          export ODBCINSTINI=/etc/odbcinst.ini
-
           # Install Python dependencies
           pip3 install --upgrade pip
           pip3 install -r /home/ec2-user/booking_system/requirements.txt
 
           # Verify setup
-          echo "Registered ODBC drivers:"
-          odbcinst -q -d || echo "odbcinst failed!"
-          echo "Contents of /etc/odbcinst.ini:"
-          cat /etc/odbcinst.ini || echo "/etc/odbcinst.ini not found!"
           echo "Driver file check:"
           ls -l "$DRIVER_PATH"
-          echo "ODBCINSTINI setting:"
-          echo $ODBCINSTINI
           echo "ODBC Driver setup completed successfully."
         EOF
   
     - name: Run database setup and booking trigger scripts on EC2
       run: |
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
-          # Set ODBCINSTINI to ensure unixODBC finds the config
-          export ODBCINSTINI=/etc/odbcinst.ini
-
           # Debug the environment
-          echo "Registered ODBC drivers:"
-          odbcinst -q -d || echo "odbcinst failed!"
-          echo "Contents of /etc/odbcinst.ini:"
-          cat /etc/odbcinst.ini || echo "/etc/odbcinst.ini not found!"
           echo "Driver library directory:"
           ls -l /opt/microsoft/msodbcsql17/lib64/ || echo "Directory not found!"
-          echo "ODBCINSTINI setting:"
-          echo $ODBCINSTINI
 
           # Run the scripts
           cd /home/ec2-user/booking_system
