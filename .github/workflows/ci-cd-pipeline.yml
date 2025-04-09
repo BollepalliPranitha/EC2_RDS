@@ -45,51 +45,42 @@ jobs:
       run: |
         # SSH into EC2 and install tools
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
-        # Update system and install required packages
+          # Update system and install required packages
           sudo yum update -y
-          sudo yum groupinstall "Development Tools" -y
           sudo yum install -y python3-devel unixODBC-devel
 
-          # Remove any existing Microsoft repo and add the new one
-          sudo rm -f /etc/yum.repos.d/microsoft.repo
-          sudo curl https://packages.microsoft.com/config/rhel/7/prod.repo -o /etc/yum.repos.d/microsoft.repo
-
-          # Check if msodbcsql17 is already installed
+          # Install Microsoft ODBC Driver 17 for SQL Server
+          # Amazon Linux 2023 requires a slightly different approach than RHEL 7
           if ! rpm -q msodbcsql17; then
-            echo "msodbcsql17 not installed, attempting to install..."
-        
-            # Try installing ODBC Driver 17 for SQL Server non-interactively with yum
-            sudo yum install -y msodbcsql17 --assumeyes
+            echo "Installing ODBC Driver 17 for SQL Server..."
+            # Add Microsoft repository and install the driver
+            sudo curl -o /etc/yum.repos.d/msprod.repo https://packages.microsoft.com/config/amazonlinux/2/prod.repo
+            sudo yum install -y msodbcsql17
             sudo yum clean all
 
-            # If yum fails, fall back to RPM installation
+            # Verify installation
             if [ $? -ne 0 ]; then
-              echo "YUM installation failed, falling back to RPM..."
-
-              # Download and install the RPM manually
-              curl -L https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-              curl -L https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo
-              sudo yum install -y msodbcsql17
-
-              if [ $? -ne 0 ]; then
-                echo "RPM file msodbcsql17-17.10.6.1-1.x86_64.rpm not found or failed!"
-                exit 1
-              fi
+              echo "Failed to install msodbcsql17!"
+              exit 1
             fi
           else
             echo "msodbcsql17 is already installed."
           fi
 
-          # Install Python pip and dependencies from requirements.txt
+          # Ensure the driver is registered with unixODBC
+          if [ ! -f /etc/odbcinst.ini ] || ! grep -q "ODBC Driver 17 for SQL Server" /etc/odbcinst.ini; then
+            echo "Registering ODBC Driver 17 for SQL Server with unixODBC..."
+            sudo bash -c 'echo -e "[ODBC Driver 17 for SQL Server]\nDescription=Microsoft ODBC Driver 17 for SQL Server\nDriver=/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.10.so.6.1" >> /etc/odbcinst.ini'
+          fi
+
+          # Install Python pip and dependencies
           pip3 install --upgrade pip
           pip3 install -r /home/ec2-user/booking_system/requirements.txt
 
-          # Echo success message
+          # Verify ODBC driver availability
+          odbcinst -q -d
           echo "ODBC Driver 17 for SQL Server and pip dependencies installed successfully"
         EOF
-
-
-    
   
     - name: Run database setup and booking trigger scripts on EC2
       run: |
