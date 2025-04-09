@@ -37,7 +37,7 @@ jobs:
       run: |
         # SSH into EC2 and install tools
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
-          # Update system and install required packages
+        # Update system and install required packages
           sudo yum update -y
           sudo yum groupinstall "Development Tools" -y
           sudo yum install -y python3-devel unixODBC-devel
@@ -49,7 +49,7 @@ jobs:
           # Check if msodbcsql17 is already installed
           if ! rpm -q msodbcsql17; then
             echo "msodbcsql17 not installed, attempting to install..."
-
+        
             # Try installing ODBC Driver 17 for SQL Server non-interactively with yum
             sudo yum install -y msodbcsql17 --assumeyes
             sudo yum clean all
@@ -58,11 +58,13 @@ jobs:
             if [ $? -ne 0 ]; then
               echo "YUM installation failed, falling back to RPM..."
 
-              # Assuming the RPM file is available in the correct directory
-              if [ -f msodbcsql17-17.10.6.1-1.x86_64.rpm ]; then
-                sudo rpm -ivh --noscripts msodbcsql17-17.10.6.1-1.x86_64.rpm
-              else
-                echo "RPM file msodbcsql17-17.10.6.1-1.x86_64.rpm not found!"
+              # Download and install the RPM manually
+              curl -L https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+              curl -L https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo
+              sudo yum install -y msodbcsql17
+
+              if [ $? -ne 0 ]; then
+                echo "RPM file msodbcsql17-17.10.6.1-1.x86_64.rpm not found or failed!"
                 exit 1
               fi
             fi
