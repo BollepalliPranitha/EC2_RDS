@@ -14,7 +14,7 @@ def connect_to_rds(config, database='master'):
 
 def create_database(cursor, db_name):
     cursor.execute(f"IF DB_ID('{db_name}') IS NULL CREATE DATABASE {db_name};")
-    cursor.commit()  # Commit the database creation
+    #cursor.commit()  # Commit the database creation
 
 def create_tables(cursor):
     cursor.execute("""
@@ -96,7 +96,7 @@ def main():
         data = json.load(f)
     
     # Step 1: Connect to master to create the database
-    master_conn = connect_to_rds(config, database='master')
+    master_conn = connect_to_rds(config, database='master', autocommit=True)
     master_cursor = master_conn.cursor()
     create_database(master_cursor, config['DB_NAME'])
     master_conn.close()
