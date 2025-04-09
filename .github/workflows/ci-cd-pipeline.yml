@@ -44,14 +44,12 @@ jobs:
           pip3 install -r /home/ec2-user/booking_system/requirements.txt
         EOF
 
-    - name: Upload files to EC2
+    - name: Upload files to EC2 using rsync
       run: |
-        ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
-          # Create the directory if it doesn't exist
-          mkdir -p /home/ec2-user/booking_system
-        EOF
-        # Now upload the files to EC2
-        scp -i private_key.pem -o StrictHostKeyChecking=no -r . ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/booking_system
+        # Install rsync on EC2 if it's not already installed
+        ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} "sudo yum install -y rsync"
+        # Use rsync to upload files while excluding the .git directory
+        rsync -avz --exclude '.git' -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" ./ ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/booking_system
   
     - name: Run database setup and booking trigger scripts on EC2
       run: |
