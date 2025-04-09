@@ -1,0 +1,5 @@
+pyodbc==4.0.30  # ODBC driver for connecting to MSSQL
+boto3==1.24.0   # AWS SDK for Python, if you are using AWS resources like EC2 and RDS
+paramiko==2.11.0  # SSH connection library for secure connection to EC2
+PyYAML==6.0      # For working with YAML files
+sqlalchemy==1.4.35  # ORM for database operations if needed

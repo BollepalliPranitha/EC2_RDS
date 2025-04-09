@@ -1,0 +1,5 @@
+RDS_HOST: 'database-1.cefo7yhuwfxg.us-east-1.rds.amazonaws.com'
+DB_PORT: 1433 
+DB_NAME: 'Hotel_Booking_System'
+DB_USER: 'admin'  
+DB_PASSWORD: 'DB-training-0325'  
