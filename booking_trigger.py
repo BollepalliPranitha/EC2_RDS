@@ -8,10 +8,10 @@ def load_config():
         config = yaml.safe_load(f)
     return config
 
-def connect_to_rds(config):
+def connect_to_rds(config, database='master', autocommit=False):
     driver_path = "/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.10.so.6.1"
-    connection_string = f'DRIVER={driver_path};SERVER={config["RDS_HOST"]},{config["DB_PORT"]};DATABASE={config["DB_NAME"]};UID={config["DB_USER"]};PWD={config["DB_PASSWORD"]}'
-    return pyodbc.connect(connection_string)
+    connection_string = f'DRIVER={driver_path};SERVER={config["RDS_HOST"]},{config["DB_PORT"]};DATABASE={database};UID={config["DB_USER"]};PWD={config["DB_PASSWORD"]}'
+    return pyodbc.connect(connection_string, autocommit=autocommit)
 
 def calculate_total_cost(cursor, room_id, check_in_date, check_out_date):
     cursor.execute("""

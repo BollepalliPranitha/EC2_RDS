@@ -7,10 +7,10 @@ def load_config():
         config = yaml.safe_load(f)
     return config
 
-def connect_to_rds(config, database='master'):
+def connect_to_rds(config, database='master', autocommit=False):
     driver_path = "/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.10.so.6.1"
     connection_string = f'DRIVER={driver_path};SERVER={config["RDS_HOST"]},{config["DB_PORT"]};DATABASE={database};UID={config["DB_USER"]};PWD={config["DB_PASSWORD"]}'
-    return pyodbc.connect(connection_string)
+    return pyodbc.connect(connection_string, autocommit=autocommit)
 
 def create_database(cursor, db_name):
     cursor.execute(f"IF DB_ID('{db_name}') IS NULL CREATE DATABASE {db_name};")
