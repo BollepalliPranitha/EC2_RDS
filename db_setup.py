@@ -112,7 +112,7 @@ def insert_sample_data(cursor, data):
                 INSERT INTO Rooms (HotelID, RoomNumber, RoomType, PricePerNight)
                 VALUES (?, ?, ?, ?);
             END
-        """, (room["HotelID"], room["RoomNumber"], room["RoomNumber"], room["RoomType"], room["PricePerNight"]))
+        """, (room["HotelID"], room["RoomNumber"], room["RoomType"], room["PricePerNight"]))
 
     # Insert guests data
     for guest in data["Guests"]:
