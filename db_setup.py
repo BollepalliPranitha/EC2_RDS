@@ -122,7 +122,7 @@ def insert_sample_data(cursor, data):
                 INSERT INTO Guests (FirstName, LastName, Email, Phone)
                 VALUES (?, ?, ?, ?);
             END
-        """, (guest["FirstName"], guest["LastName"], guest["Email"], guest["Phone"]))
+        """, (guest["Email"], guest["FirstName"], guest["LastName"], guest["Phone"]))
 
     # Insert bookings data
     for booking in data["Bookings"]:
