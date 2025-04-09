@@ -41,27 +41,33 @@ jobs:
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} "mkdir -p /home/ec2-user/booking_system" 
         # Use rsync to upload files while excluding the .git directory
         rsync -avz --exclude '.git' -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" ./ ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/booking_system
-    - name: Install necessary tools on EC2
+        - name: Install necessary tools on EC2
       run: |
         # SSH into EC2 and install tools
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
           # Update system and install prerequisites
           sudo yum update -y
-          sudo yum install -y python3-devel unixODBC-devel
+          sudo yum install -y python3-devel unixODBC-devel glibc libgcc
 
           # Install Microsoft ODBC Driver 17 for SQL Server
           if ! rpm -q msodbcsql17; then
             echo "Installing ODBC Driver 17 for SQL Server..."
-            # Use Amazon Linux 2 repo (closest match for Amazon Linux 2023)
+            # Add Microsoft repository for Amazon Linux 2 (closest match)
             sudo curl -o /etc/yum.repos.d/msprod.repo https://packages.microsoft.com/config/amazonlinux/2/prod.repo
+            
+            # Try installing with yum first
             sudo yum install -y msodbcsql17
-            sudo yum clean all
-
-            # Check if installation succeeded
             if [ $? -ne 0 ]; then
-              echo "Failed to install msodbcsql17!"
-              exit 1
+              echo "Yum installation failed, attempting manual RPM install..."
+              # Download the RPM directly and install with --noscripts to skip PREIN
+              curl -o msodbcsql17.rpm https://packages.microsoft.com/amazonlinux/2/prod/pool/main/m/msodbcsql17/msodbcsql17-17.10.6.1-1.x86_64.rpm
+              sudo rpm -ivh --noscripts msodbcsql17.rpm
+              if [ $? -ne 0 ]; then
+                echo "Manual RPM installation failed!"
+                exit 1
+              fi
             fi
+            sudo yum clean all
           else
             echo "msodbcsql17 is already installed."
           fi
@@ -95,13 +101,6 @@ jobs:
     - name: Run database setup and booking trigger scripts on EC2
       run: |
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
-          # Debugging: Check Python and ODBC setup
-          python3 --version
-          pip3 show pyodbc
-          odbcinst -q -d
-          ls -l /opt/microsoft/msodbcsql17/lib64/ || echo "ODBC driver directory not found!"
-
-          # Run the scripts
           cd /home/ec2-user/booking_system
           python3 db_setup.py  # Run the setup script to create DB, tables and insert data
           python3 booking_trigger.py  # Run the booking trigger script to insert bookings and calculate costs
