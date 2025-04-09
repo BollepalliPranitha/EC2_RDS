@@ -41,61 +41,45 @@ jobs:
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} "mkdir -p /home/ec2-user/booking_system" 
         # Use rsync to upload files while excluding the .git directory
         rsync -avz --exclude '.git' -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" ./ ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/booking_system
-        - name: Install necessary tools on EC2
+    - name: Install necessary tools on EC2
       run: |
         # SSH into EC2 and install tools
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
-          # Update system and install prerequisites
+          # Update system and install required packages
           sudo yum update -y
-          sudo yum install -y python3-devel unixODBC-devel glibc libgcc
+          sudo yum install -y python3-devel unixODBC-devel
 
           # Install Microsoft ODBC Driver 17 for SQL Server
+          # Amazon Linux 2023 requires a slightly different approach than RHEL 7
           if ! rpm -q msodbcsql17; then
             echo "Installing ODBC Driver 17 for SQL Server..."
-            # Add Microsoft repository for Amazon Linux 2 (closest match)
+            # Add Microsoft repository and install the driver
             sudo curl -o /etc/yum.repos.d/msprod.repo https://packages.microsoft.com/config/amazonlinux/2/prod.repo
-            
-            # Try installing with yum first
             sudo yum install -y msodbcsql17
-            if [ $? -ne 0 ]; then
-              echo "Yum installation failed, attempting manual RPM install..."
-              # Download the RPM directly and install with --noscripts to skip PREIN
-              curl -o msodbcsql17.rpm https://packages.microsoft.com/amazonlinux/2/prod/pool/main/m/msodbcsql17/msodbcsql17-17.10.6.1-1.x86_64.rpm
-              sudo rpm -ivh --noscripts msodbcsql17.rpm
-              if [ $? -ne 0 ]; then
-                echo "Manual RPM installation failed!"
-                exit 1
-              fi
-            fi
             sudo yum clean all
+
+            # Verify installation
+            if [ $? -ne 0 ]; then
+              echo "Failed to install msodbcsql17!"
+              exit 1
+            fi
           else
             echo "msodbcsql17 is already installed."
           fi
 
-          # Locate the actual ODBC driver library
-          DRIVER_PATH=$(find /opt/microsoft/msodbcsql17/lib64 -name 'libmsodbcsql-17.*.so.*' | head -n 1)
-          if [ -z "$DRIVER_PATH" ]; then
-            echo "Error: No ODBC Driver 17 library found in /opt/microsoft/msodbcsql17/lib64!"
-            ls -l /opt/microsoft/msodbcsql17/lib64/ || echo "Directory not found!"
-            exit 1
+          # Ensure the driver is registered with unixODBC
+          if [ ! -f /etc/odbcinst.ini ] || ! grep -q "ODBC Driver 17 for SQL Server" /etc/odbcinst.ini; then
+            echo "Registering ODBC Driver 17 for SQL Server with unixODBC..."
+            sudo bash -c 'echo -e "[ODBC Driver 17 for SQL Server]\nDescription=Microsoft ODBC Driver 17 for SQL Server\nDriver=/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.10.so.6.1" >> /etc/odbcinst.ini'
           fi
-          echo "Found ODBC Driver library at: $DRIVER_PATH"
 
-          # Register the driver with unixODBC
-          sudo bash -c "cat > /etc/odbcinst.ini << 'CONFIG'
-          [ODBC Driver 17 for SQL Server]
-          Description=Microsoft ODBC Driver 17 for SQL Server
-          Driver=$DRIVER_PATH
-          CONFIG"
-
-          # Install Python dependencies
+          # Install Python pip and dependencies
           pip3 install --upgrade pip
           pip3 install -r /home/ec2-user/booking_system/requirements.txt
 
-          # Verify driver registration
-          echo "Registered ODBC drivers:"
+          # Verify ODBC driver availability
           odbcinst -q -d
-          echo "ODBC Driver setup completed successfully."
+          echo "ODBC Driver 17 for SQL Server and pip dependencies installed successfully"
         EOF
   
     - name: Run database setup and booking trigger scripts on EC2
