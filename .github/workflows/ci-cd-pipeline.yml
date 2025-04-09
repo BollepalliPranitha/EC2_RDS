@@ -37,9 +37,13 @@ jobs:
       run: |
         ssh -i private_key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_IP }} << 'EOF'
           # Install development tools and ODBC driver on EC2
+          sudo yum update -y
           sudo yum groupinstall "Development Tools" -y
           sudo yum install -y python3-devel unixODBC-devel
-          sudo yum install -y msodbcsql17
+          
+          sudo curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/yum.repos.d/microsoft.repo
+          sudo yum install -y msodbcsql17 unixODBC
+          echo "ODBC Driver 17 for SQL Server installed successfully"
           # Install pip dependencies on EC2
           pip3 install -r /home/ec2-user/booking_system/requirements.txt
         EOF
