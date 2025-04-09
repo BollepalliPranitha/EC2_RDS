@@ -2,20 +2,19 @@ import pyodbc
 import json
 import yaml
 
-# Read database config from the config.yaml
 def load_config():
     with open('config.yaml', 'r') as f:
         config = yaml.safe_load(f)
     return config
 
-def connect_to_rds(config):
+def connect_to_rds(config, database='master'):
     driver_path = "/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.10.so.6.1"
-    connection_string = f'DRIVER={driver_path};SERVER={config["RDS_HOST"]},{config["DB_PORT"]};DATABASE={config["DB_NAME"]};UID={config["DB_USER"]};PWD={config["DB_PASSWORD"]}'
+    connection_string = f'DRIVER={driver_path};SERVER={config["RDS_HOST"]},{config["DB_PORT"]};DATABASE={database};UID={config["DB_USER"]};PWD={config["DB_PASSWORD"]}'
     return pyodbc.connect(connection_string)
 
 def create_database(cursor, db_name):
     cursor.execute(f"IF DB_ID('{db_name}') IS NULL CREATE DATABASE {db_name};")
-    cursor.execute(f"USE {db_name};")
+    cursor.commit()  # Commit the database creation
 
 def create_tables(cursor):
     cursor.execute("""
@@ -64,7 +63,6 @@ def create_tables(cursor):
     """)
 
 def insert_data(cursor, data):
-    # Insert Hotels
     for hotel in data['Hotels']:
         cursor.execute("""
             IF NOT EXISTS (SELECT 1 FROM Hotels WHERE HotelName = ?)
@@ -72,7 +70,6 @@ def insert_data(cursor, data):
             VALUES (?, ?, ?)
         """, (hotel['HotelName'], hotel['HotelName'], hotel['Location'], hotel['TotalRooms']))
     
-    # Insert Rooms
     for room in data['Rooms']:
         cursor.execute("""
             IF NOT EXISTS (SELECT 1 FROM Rooms WHERE HotelID = ? AND RoomNumber = ?)
@@ -80,7 +77,6 @@ def insert_data(cursor, data):
             VALUES (?, ?, ?, ?)
         """, (room['HotelID'], room['RoomNumber'], room['RoomType'], room['PricePerNight']))
     
-    # Insert Guests
     for guest in data['Guests']:
         cursor.execute("""
             IF NOT EXISTS (SELECT 1 FROM Guests WHERE Email = ?)
@@ -88,23 +84,27 @@ def insert_data(cursor, data):
             VALUES (?, ?, ?, ?)
         """, (guest['Email'], guest['FirstName'], guest['LastName'], guest['Email'], guest['Phone']))
 
-    # Insert Bookings
     for booking in data['Bookings']:
         cursor.execute("""
             INSERT INTO Bookings (GuestID, RoomID, CheckInDate, CheckOutDate, TotalCost)
             VALUES (?, ?, ?, ?, ?)
         """, (booking['GuestID'], booking['RoomID'], booking['CheckInDate'], booking['CheckOutDate'], booking['TotalCost']))
 
-
 def main():
     config = load_config()
     with open('datasets/data.json', 'r') as f:
         data = json.load(f)
     
-    connection = connect_to_rds(config)
+    # Step 1: Connect to master to create the database
+    master_conn = connect_to_rds(config, database='master')
+    master_cursor = master_conn.cursor()
+    create_database(master_cursor, config['DB_NAME'])
+    master_conn.close()
+
+    # Step 2: Connect to the new database for setup
+    connection = connect_to_rds(config, database=config['DB_NAME'])
     cursor = connection.cursor()
     
-    create_database(cursor, config['DB_NAME'])
     create_tables(cursor)
     insert_data(cursor, data)
 
