@@ -54,11 +54,19 @@ jobs:
             sudo curl -o /etc/yum.repos.d/msprod.repo https://packages.microsoft.com/config/amazonlinux/2/prod.repo
             sudo yum install -y msodbcsql17 || {
               echo "Yum install failed, trying manual RPM install..."
-              curl -o msodbcsql17.rpm https://packages.microsoft.com/amazonlinux/2/prod/pool/main/m/msodbcsql17/msodbcsql17-17.10.6.1-1.x86_64.rpm
+              # Use a known working URL from Microsoft's packages site
+              curl -o msodbcsql17.rpm https://packages.microsoft.com/rhel/8/prod/Packages/m/msodbcsql17-17.10.6.1-1.x86_64.rpm
+              if [ $? -ne 0 ]; then
+                echo "Failed to download msodbcsql17 RPM!"
+                exit 1
+              fi
               sudo rpm -ivh --noscripts msodbcsql17.rpm || {
                 echo "Manual RPM install failed!"
+                rpm -qa | grep msodbcsql
+                ls -l /opt/microsoft/msodbcsql17/ || echo "Driver directory not created!"
                 exit 1
               }
+              echo "Manual RPM install succeeded."
             }
             sudo yum clean all
           else
@@ -88,6 +96,10 @@ jobs:
           # Verify setup
           echo "Registered ODBC drivers:"
           odbcinst -q -d
+          echo "Contents of /etc/odbcinst.ini:"
+          cat /etc/odbcinst.ini
+          echo "Driver file check:"
+          ls -l "$DRIVER_PATH"
           echo "ODBC Driver setup completed successfully."
         EOF
   
