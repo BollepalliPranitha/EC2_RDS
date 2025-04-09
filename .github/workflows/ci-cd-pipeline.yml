@@ -46,14 +46,28 @@ jobs:
           sudo rm -f /etc/yum.repos.d/microsoft.repo
           sudo curl https://packages.microsoft.com/config/rhel/7/prod.repo -o /etc/yum.repos.d/microsoft.repo
 
-          # Try installing ODBC Driver 17 for SQL Server non-interactively with yum
-          sudo yum install -y msodbcsql17 --assumeyes
-          sudo yum clean all
+          # Check if msodbcsql17 is already installed
+          if ! rpm -q msodbcsql17; then
+            echo "msodbcsql17 not installed, attempting to install..."
 
-          # If yum fails, fall back to RPM with --noscripts
-          if [ $? -ne 0 ]; then
-            echo "YUM installation failed, falling back to RPM..."
-            sudo rpm -ivh --noscripts msodbcsql17-17.10.6.1-1.x86_64.rpm
+            # Try installing ODBC Driver 17 for SQL Server non-interactively with yum
+            sudo yum install -y msodbcsql17 --assumeyes
+            sudo yum clean all
+
+            # If yum fails, fall back to RPM installation
+            if [ $? -ne 0 ]; then
+              echo "YUM installation failed, falling back to RPM..."
+
+              # Assuming the RPM file is available in the correct directory
+              if [ -f msodbcsql17-17.10.6.1-1.x86_64.rpm ]; then
+                sudo rpm -ivh --noscripts msodbcsql17-17.10.6.1-1.x86_64.rpm
+              else
+                echo "RPM file msodbcsql17-17.10.6.1-1.x86_64.rpm not found!"
+                exit 1
+              fi
+            fi
+          else
+            echo "msodbcsql17 is already installed."
           fi
 
           # Install Python pip and dependencies from requirements.txt
@@ -63,6 +77,7 @@ jobs:
           # Echo success message
           echo "ODBC Driver 17 for SQL Server and pip dependencies installed successfully"
         EOF
+
 
     - name: Upload files to EC2 using rsync
       run: |
