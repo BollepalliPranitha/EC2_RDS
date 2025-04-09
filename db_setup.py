@@ -95,6 +95,16 @@ def calculate_total_cost(cursor, room_id, check_in_date, check_out_date):
 
 def check_and_insert_booking(cursor, booking_data):
     for booking in booking_data:
+        # Ensure that the GuestID exists before inserting a booking
+        cursor.execute("""
+            SELECT GuestID FROM Guests WHERE GuestID = ?
+        """, (booking['GuestID'],))
+        guest_exists = cursor.fetchone()
+        
+        if not guest_exists:
+            print(f"Guest with ID {booking['GuestID']} does not exist. Please insert the guest first.")
+            continue  # Skip this booking if the guest doesn't exist
+        
         cursor.execute("""
             SELECT * FROM Bookings 
             WHERE RoomID = ? AND (CheckInDate BETWEEN ? AND ? OR CheckOutDate BETWEEN ? AND ?)
