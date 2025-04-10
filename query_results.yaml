@@ -1,0 +1,6 @@
+- HotelName: Mountain View Hotel
+  TotalRevenue: !!python/object/apply:decimal.Decimal
+  - '3200.00'
+- HotelName: Sunset Resort
+  TotalRevenue: !!python/object/apply:decimal.Decimal
+  - '8640.00'
